@@ -1,0 +1,30 @@
+server:
+  AppVersion: 1.0.0
+  ServerHeader: fiber
+  Port: :3000
+  Mode: Development
+  JwtSecretKey: secretkey
+  ReadTimeout: 5
+  WriteTimeout: 5
+  Debug: true
+
+logger:
+  Encoding: json
+  Level: info
+
+postgres:
+  PostgresqlHost: localhost
+  PostgresqlPort: 5432
+  PostgresqlUser: root
+  PostgresqlPassword: 123123
+  PostgresqlDbname: url-shortener
+  PostgresqlSslmode: false
+  PgDriver: postgres
+
+redis:
+  RedisAddr: localhost:6379
+  RedisPassword:
+  RedisDb: 0
+  MinIdleConns: 200
+  PoolSize: 12000
+  PoolTimeout: 240

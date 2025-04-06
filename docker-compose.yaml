@@ -1,0 +1,50 @@
+volumes:
+  postgres_data:
+  redis_data:
+
+
+services:
+  web:
+    container_name: api
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgresql
+      - redis
+    restart: always
+    volumes:
+      - ./:/app
+
+  migrations:
+    image: ghcr.io/kukymbr/goose-docker-cmd:latest
+    env_file:
+      - .env
+    depends_on:
+      - postgresql
+    restart: on-failure
+    volumes:
+      - ./migrations:/migrations
+    command: [ "up" ]
+
+  redis:
+    image: redis:latest
+    container_name: api_redis
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - redis_data:/data
+
+  postgresql:
+    image: postgres:16
+    container_name: api_postgresql
+    ports:
+      - "5434:5432"
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
