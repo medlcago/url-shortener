@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"url-shortener/internal/links"
 	"url-shortener/internal/models"
+	"url-shortener/pkg/http"
 )
 
 type linksHandlers struct {
@@ -27,7 +28,8 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(res)
+	data := http.NewResponse[*models.Link](true, "", res)
+	return ctx.Status(fiber.StatusCreated).JSON(data)
 }
 
 func (h *linksHandlers) Redirect(ctx fiber.Ctx) error {
