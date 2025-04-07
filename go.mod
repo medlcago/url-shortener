@@ -27,6 +27,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/gofiber/schema v1.3.0 // indirect
 	github.com/gofiber/utils/v2 v2.0.0-beta.8 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

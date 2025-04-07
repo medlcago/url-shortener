@@ -2,7 +2,7 @@ package http
 
 type Response[T any] struct {
 	Ok   bool   `json:"ok"`
-	Err  string `json:"error"`
+	Err  string `json:"error,omitempty"`
 	Data T      `json:"data,omitempty"`
 }
 
