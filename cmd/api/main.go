@@ -29,7 +29,7 @@ func main() {
 	}
 
 	appLogger := logger.NewLogrusLogger(cfg)
-	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s, SSL: %v", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode)
+	appLogger.Infof("AppVersion: %s, LogLevel: %s, Mode: %s", cfg.Server.AppVersion, cfg.Logger.Level, cfg.Server.Mode)
 
 	app := fiber.New(fiber.Config{
 		StructValidator: utils.NewStructValidator(validator.New()),

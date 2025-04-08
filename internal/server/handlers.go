@@ -12,10 +12,6 @@ import (
 )
 
 func (s *Server) MapHandlers() {
-	mw := middleware.NewManager(s.cfg, s.logger)
-	s.app.Use(requestid.New())
-	s.app.Use(mw.DebugMiddleware())
-
 	// Init repositories
 	linksRepo := repoLinks.NewLinksRepo(s.db)
 	authRepo := repoAuth.NewAuthRepository(s.db)
@@ -28,11 +24,16 @@ func (s *Server) MapHandlers() {
 	linksHandlers := httpLinks.NewLinksHandlers(linksService)
 	authHandlers := httpAuth.NewAuthHandlers(authService)
 
+	// Init global middlewares
+	mw := middleware.NewManager(authService, s.cfg, s.logger)
+	s.app.Use(requestid.New())
+	s.app.Use(mw.DebugMiddleware())
+
 	apiV1 := s.app.Group("/api/v1")
 
 	linksGroup := apiV1.Group("/links")
 	authGroup := apiV1.Group("/auth")
 
 	httpLinks.MapLinksRoutes(linksGroup, linksHandlers)
-	httpAuth.MapAuthRoutes(authGroup, authHandlers)
+	httpAuth.MapAuthRoutes(authGroup, authHandlers, mw)
 }

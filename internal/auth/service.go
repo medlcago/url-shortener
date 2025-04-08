@@ -14,5 +14,5 @@ type Token struct {
 type Service interface {
 	Login(ctx context.Context, user *models.User) (*Token, error)
 	Register(ctx context.Context, user *models.User) (*Token, error)
-	GetByID(ctx context.Context, id uuid.UUID) (*Token, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 }

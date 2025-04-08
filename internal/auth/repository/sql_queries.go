@@ -4,7 +4,7 @@ const (
 	createUser = `
 		INSERT INTO users (email, password)
 		VALUES ($1, $2)
-		RETURNING id
+		RETURNING *
 	`
 
 	getUserByID = `SELECT * FROM users WHERE id = $1`

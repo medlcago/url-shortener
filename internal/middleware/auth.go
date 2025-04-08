@@ -1,27 +1,54 @@
 package middleware
 
 import (
+	"context"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"url-shortener/pkg/http"
 	"url-shortener/pkg/utils"
 )
 
+func extractJWTClaims(ctx fiber.Ctx, secret string) (*utils.Claims, error) {
+	req, err := adaptor.ConvertRequest(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, err := utils.ExtractClaimsFromRequest(req, secret)
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
 func (m *Manager) AuthJWTMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
-		req, err := adaptor.ConvertRequest(ctx, false)
+		claims, err := extractJWTClaims(ctx, m.cfg.Server.JwtSecretKey)
 		if err != nil {
-			m.logger.Errorf("error converting request: %v", err)
-			return err
-		}
-
-		claims, err := utils.ExtractClaimsFromRequest(req, m.cfg.Server.JwtSecretKey)
-		if err != nil {
-			m.logger.Errorf("error extracting claims: %v", err)
-			return http.WithMessage(err.Error()).SetStatus(fiber.StatusUnauthorized)
+			return http.WithMessage("invalid token").SetStatus(fiber.StatusUnauthorized)
 		}
 
 		ctx.Locals("user_id", claims.ID)
+		return ctx.Next()
+	}
+}
+
+func (m *Manager) CurrentUserMiddleware() fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		claims, err := extractJWTClaims(ctx, m.cfg.Server.JwtSecretKey)
+		if err != nil {
+			return http.WithMessage("invalid token").SetStatus(fiber.StatusUnauthorized)
+		}
+
+		user, err := m.authService.GetByID(context.Background(), claims.ID)
+		if err != nil {
+			return http.WithMessage("invalid credentials").SetStatus(fiber.StatusUnauthorized)
+		}
+
+		user.SanitizePassword()
+
+		ctx.Locals("user", user)
 		return ctx.Next()
 	}
 }

@@ -32,9 +32,26 @@ func (h *authHandlers) Login(ctx fiber.Ctx) error {
 }
 
 func (h *authHandlers) Register(ctx fiber.Ctx) error {
-	return ctx.SendStatus(fiber.StatusNotImplemented)
+	var user models.User
+	if err := ctx.Bind().JSON(&user); err != nil {
+		return err
+	}
+
+	token, err := h.authService.Register(context.Background(), &user)
+	if err != nil {
+		return err
+	}
+
+	data := http.NewResponse[*auth.Token](true, "", token)
+	return ctx.Status(fiber.StatusCreated).JSON(data)
 }
 
 func (h *authHandlers) GetMe(ctx fiber.Ctx) error {
-	return ctx.SendStatus(fiber.StatusNotImplemented)
+	user := fiber.Locals[*models.User](ctx, "user")
+	if user == nil {
+		return ctx.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	data := http.NewResponse[*models.User](true, "", user)
+	return ctx.JSON(data)
 }

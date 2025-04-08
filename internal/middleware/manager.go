@@ -2,17 +2,20 @@ package middleware
 
 import (
 	"url-shortener/config"
+	"url-shortener/internal/auth"
 	"url-shortener/pkg/logger"
 )
 
 type Manager struct {
-	cfg    *config.Config
-	logger logger.Logger
+	authService auth.Service
+	cfg         *config.Config
+	logger      logger.Logger
 }
 
-func NewManager(cfg *config.Config, logger logger.Logger) *Manager {
+func NewManager(authService auth.Service, cfg *config.Config, logger logger.Logger) *Manager {
 	return &Manager{
-		cfg:    cfg,
-		logger: logger,
+		authService: authService,
+		cfg:         cfg,
+		logger:      logger,
 	}
 }
