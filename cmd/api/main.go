@@ -13,7 +13,7 @@ import (
 	"url-shortener/pkg/db/redis"
 	"url-shortener/pkg/http"
 	"url-shortener/pkg/logger"
-	"url-shortener/pkg/storage"
+	redisStorage "url-shortener/pkg/storage/redis"
 	"url-shortener/pkg/utils"
 )
 
@@ -51,9 +51,10 @@ func main() {
 	}
 	defer rdb.Close()
 
-	redisStorage := storage.WithRedisClient(rdb)
+	rs := redisStorage.New(redisStorage.Config{Client: rdb})
+	defer rs.Close()
 
-	srv := server.NewServer(app, cfg, psqlDB, redisStorage, appLogger)
+	srv := server.NewServer(app, cfg, psqlDB, rs, appLogger)
 	if err = srv.Run(); err != nil {
 		appLogger.Fatalf("srv.Run: %v", err)
 	}

@@ -36,20 +36,20 @@ func NewLinkService(repo links.Repository, storage storage.Storage, logger logge
 
 func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Link, error) {
 	if link.ExpiresAt != nil && link.ExpiresAt.Before(time.Now().UTC()) {
-		return nil, http.WithMessage("expired time is in the past").SetStatus(400)
+		return nil, http.BadRequest
 	}
 
 	alias, err := randomString(8)
 	if err != nil {
 		s.logger.Errorf("failed to generate short URL: %v", err)
-		return nil, http.WithMessage("failed to generate short URL")
+		return nil, http.InternalServerError
 	}
 
 	link.Alias = alias
 	id, err := s.repo.Save(ctx, link)
 	if err != nil {
 		s.logger.Error("linksService.repo.Save:", err)
-		return nil, http.WithMessage("failed to save link")
+		return nil, http.InternalServerError
 	}
 
 	go func() {
@@ -61,14 +61,8 @@ func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Li
 
 	s.logger.Infof("Created link with uid: %s", id)
 
-	return &models.Link{
-		ID:          id,
-		Alias:       alias,
-		OriginalURL: link.OriginalURL,
-		ShortURL:    fmt.Sprintf("%s/%s", link.BaseURL, alias),
-		CreatedAt:   time.Now().UTC(),
-		ExpiresAt:   link.ExpiresAt,
-	}, nil
+	shortURL := fmt.Sprintf("%s/%s", link.BaseURL, alias)
+	return models.NewLink(id, alias, link.OriginalURL, shortURL, link.ExpiresAt), nil
 }
 
 func (s *linkService) Resolve(ctx context.Context, alias string) (string, error) {
@@ -82,9 +76,9 @@ func (s *linkService) Resolve(ctx context.Context, alias string) (string, error)
 	link, err := s.repo.Get(ctx, alias)
 	if err != nil {
 		if errors.Is(err, repository.ErrLinkNotFound) {
-			return "", http.WithMessage("link not found").SetStatus(404)
+			return "", http.NotFound
 		}
-		return "", http.WithMessage("failed to resolve link")
+		return "", http.InternalServerError
 	}
 
 	go func() {

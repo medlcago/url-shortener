@@ -11,6 +11,13 @@ type Token struct {
 	TokenType   string `json:"token_type,omitempty"`
 }
 
+func NewToken(accessToken string) *Token {
+	return &Token{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
+	}
+}
+
 type Service interface {
 	Login(ctx context.Context, user *models.User) (*Token, error)
 	Register(ctx context.Context, user *models.User) (*Token, error)

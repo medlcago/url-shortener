@@ -7,5 +7,5 @@ import (
 
 func MapLinksRoutes(linksGroup fiber.Router, handlers links.Handlers) {
 	linksGroup.Post("/", handlers.Create)
-	linksGroup.Get("/:alias", handlers.Redirect).Name("LinkRedirect")
+	linksGroup.Get("/:alias", handlers.Redirect)
 }

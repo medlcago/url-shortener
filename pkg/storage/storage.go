@@ -11,4 +11,5 @@ type Storage interface {
 	Exists(ctx context.Context, key string) (bool, error)
 	Delete(ctx context.Context, key string) error
 	WithNamespace(namespace string) Storage
+	Close() error
 }

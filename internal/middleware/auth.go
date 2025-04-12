@@ -26,7 +26,7 @@ func (m *Manager) AuthJWTMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		claims, err := extractJWTClaims(ctx, m.cfg.Server.JwtSecretKey)
 		if err != nil {
-			return http.WithMessage("invalid token").SetStatus(fiber.StatusUnauthorized)
+			return http.InvalidToken
 		}
 
 		ctx.Locals("user_id", claims.ID)
@@ -38,12 +38,12 @@ func (m *Manager) CurrentUserMiddleware() fiber.Handler {
 	return func(ctx fiber.Ctx) error {
 		claims, err := extractJWTClaims(ctx, m.cfg.Server.JwtSecretKey)
 		if err != nil {
-			return http.WithMessage("invalid token").SetStatus(fiber.StatusUnauthorized)
+			return http.InvalidToken
 		}
 
 		user, err := m.authService.GetByID(context.Background(), claims.ID)
 		if err != nil {
-			return http.WithMessage("invalid credentials").SetStatus(fiber.StatusUnauthorized)
+			return http.InvalidCredentials
 		}
 
 		user.SanitizePassword()

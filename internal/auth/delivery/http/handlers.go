@@ -27,7 +27,7 @@ func (h *authHandlers) Login(ctx fiber.Ctx) error {
 		return err
 	}
 
-	data := http.NewResponse[*auth.Token](true, "", token)
+	data := http.OK[*auth.Token](token)
 	return ctx.JSON(data)
 }
 
@@ -36,13 +36,12 @@ func (h *authHandlers) Register(ctx fiber.Ctx) error {
 	if err := ctx.Bind().JSON(&user); err != nil {
 		return err
 	}
-
 	token, err := h.authService.Register(context.Background(), &user)
 	if err != nil {
 		return err
 	}
 
-	data := http.NewResponse[*auth.Token](true, "", token)
+	data := http.OK[*auth.Token](token)
 	return ctx.Status(fiber.StatusCreated).JSON(data)
 }
 
@@ -52,6 +51,6 @@ func (h *authHandlers) GetMe(ctx fiber.Ctx) error {
 		return ctx.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	data := http.NewResponse[*models.User](true, "", user)
+	data := http.OK[*models.User](user)
 	return ctx.JSON(data)
 }

@@ -15,3 +15,14 @@ type Link struct {
 	CreatedAt time.Time  `json:"created_at"`
 	ExpiresAt *time.Time `json:"expires_at"`
 }
+
+func NewLink(id uuid.UUID, alias string, originalURL string, shortURL string, expiresAt *time.Time) *Link {
+	return &Link{
+		ID:          id,
+		Alias:       alias,
+		OriginalURL: originalURL,
+		ShortURL:    shortURL,
+		CreatedAt:   time.Now().UTC(),
+		ExpiresAt:   expiresAt,
+	}
+}

@@ -29,18 +29,18 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 	u, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if errors.Is(err, repository.UserNotFound) {
-			return nil, http.WithMessage("invalid credentials").SetStatus(401)
+			return nil, http.InvalidCredentials
 		}
 		s.logger.WithFields(logrus.Fields{
 			"email": user.Email,
 			"error": err.Error(),
 		}).Error("failed to get user")
 
-		return nil, http.WithMessage("failed to login")
+		return nil, http.InternalServerError
 	}
 
 	if err = u.ComparePasswords(user.Password); err != nil {
-		return nil, http.WithMessage("invalid credentials").SetStatus(401)
+		return nil, http.InvalidCredentials
 	}
 
 	token, err := utils.GenerateJWTToken(u, s.cfg.Server.JwtSecretKey)
@@ -49,7 +49,7 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 			"user_id": u.ID,
 		}).Error("failed to generate JWT")
 
-		return nil, http.WithMessage("login temporarily unavailable")
+		return nil, http.InternalServerError
 	}
 
 	if err = s.repo.UpdateLastLogin(ctx, u.ID, time.Now().UTC()); err != nil {
@@ -58,15 +58,12 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 		}).Error("failed to update last login time")
 	}
 
-	return &auth.Token{
-		AccessToken: token,
-		TokenType:   "Bearer",
-	}, nil
+	return auth.NewToken(token), nil
 }
 
 func (s *authService) Register(ctx context.Context, user *models.User) (*auth.Token, error) {
 	if _, err := s.repo.GetByEmail(ctx, user.Email); err == nil {
-		return nil, http.WithMessage("user with this email already exists").SetStatus(409)
+		return nil, http.ExistsEmailError
 	}
 
 	if err := user.PrepareCreate(); err != nil {
@@ -74,7 +71,7 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 			"email": user.Email,
 		}).Error("failed to prepare the user for registration")
 
-		return nil, http.WithMessage("failed to register")
+		return nil, http.InternalServerError
 	}
 
 	u, err := s.repo.Create(ctx, user)
@@ -83,7 +80,7 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 			"email": user.Email,
 		}).Error("failed to create user")
 
-		return nil, http.WithMessage("failed to register")
+		return nil, http.InternalServerError
 	}
 
 	token, err := utils.GenerateJWTToken(u, s.cfg.Server.JwtSecretKey)
@@ -92,15 +89,24 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 			"user_id": u.ID,
 		}).Error("failed to generate JWT")
 
-		return nil, http.WithMessage("register temporarily unavailable")
+		return nil, http.InternalServerError
 	}
 
-	return &auth.Token{
-		AccessToken: token,
-		TokenType:   "Bearer",
-	}, nil
+	return auth.NewToken(token), nil
 }
 
 func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	return s.repo.GetByID(ctx, id)
+	user, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, repository.UserNotFound) {
+			return nil, http.NotFound
+		}
+
+		s.logger.WithFields(logrus.Fields{
+			"user_id": id,
+		}).Error("failed to get user")
+		return nil, http.InternalServerError
+	}
+
+	return user, nil
 }

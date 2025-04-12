@@ -25,5 +25,5 @@ func ErrorHandler(c fiber.Ctx, err error) error {
 		status = fiber.StatusBadRequest
 	}
 
-	return c.Status(status).JSON(NewErrorResponse(message))
+	return c.Status(status).JSON(Error(message))
 }

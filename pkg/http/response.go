@@ -17,6 +17,10 @@ func NewResponse[T any](ok bool, err string, data ...T) *Response[T] {
 	return res
 }
 
-func NewErrorResponse(err string) *Response[string] {
+func Error(err string) *Response[string] {
 	return NewResponse[string](false, err)
+}
+
+func OK[T any](data T) *Response[T] {
+	return NewResponse[T](true, "", data)
 }
