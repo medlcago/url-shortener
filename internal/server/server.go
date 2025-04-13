@@ -37,7 +37,6 @@ func NewServer(app *fiber.App, cfg *config.Config, db *sqlx.DB, storage storage.
 
 func (s *Server) Run() error {
 	s.MapHandlers()
-	s.MapProxy()
 
 	go func() {
 		if err := s.app.Listen(s.cfg.Server.Port); err != nil {

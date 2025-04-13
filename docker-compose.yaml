@@ -9,8 +9,6 @@ services:
     build:
       context: ./
       dockerfile: docker/Dockerfile
-    ports:
-      - "3000:3000"
     depends_on:
       - postgresql
       - redis
@@ -32,8 +30,6 @@ services:
   redis:
     image: redis:latest
     container_name: api_redis
-    ports:
-      - "6379:6379"
     restart: always
     volumes:
       - redis_data:/data
@@ -41,10 +37,19 @@ services:
   postgresql:
     image: postgres:16
     container_name: api_postgresql
-    ports:
-      - "5434:5432"
     restart: always
     env_file:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+
+  nginx:
+    container_name: nginx
+    build:
+      context: ./docker/nginx
+      dockerfile: ./Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    restart: always
