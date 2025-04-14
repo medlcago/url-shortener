@@ -74,8 +74,7 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 		return nil, http.InternalServerError
 	}
 
-	u, err := s.repo.Create(ctx, user)
-	if err != nil {
+	if err := s.repo.Create(ctx, user); err != nil {
 		s.logger.WithFields(logrus.Fields{
 			"email": user.Email,
 		}).Error("failed to create user")
@@ -83,10 +82,10 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 		return nil, http.InternalServerError
 	}
 
-	token, err := utils.GenerateJWTToken(u, s.cfg.Server.JwtSecretKey)
+	token, err := utils.GenerateJWTToken(user, s.cfg.Server.JwtSecretKey)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"user_id": u.ID,
+			"user_id": user.ID,
 		}).Error("failed to generate JWT")
 
 		return nil, http.InternalServerError
@@ -105,6 +104,7 @@ func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 		s.logger.WithFields(logrus.Fields{
 			"user_id": id,
 		}).Error("failed to get user")
+
 		return nil, http.InternalServerError
 	}
 

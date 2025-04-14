@@ -23,12 +23,11 @@ func NewAuthRepository(db *sqlx.DB) auth.Repository {
 	return &authRepository{db: db}
 }
 
-func (r *authRepository) Create(ctx context.Context, user *models.User) (*models.User, error) {
-	var u models.User
-	if err := r.db.GetContext(ctx, &u, createUser, user.Email, user.Password); err != nil {
-		return nil, err
+func (r *authRepository) Create(ctx context.Context, user *models.User) error {
+	if err := r.db.GetContext(ctx, user, createUser, user.Email, user.Password); err != nil {
+		return err
 	}
-	return &u, nil
+	return nil
 }
 
 func (r *authRepository) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {

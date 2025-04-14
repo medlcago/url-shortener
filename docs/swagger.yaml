@@ -1,0 +1,271 @@
+basePath: /api/v1
+definitions:
+  internal_auth_delivery_http.request:
+    properties:
+      email:
+        example: example@example.com
+        type: string
+      password:
+        example: very_strong_password
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_links_delivery_http.request:
+    properties:
+      expires_at:
+        example: "2006-01-02T15:04:05Z"
+        type: string
+      original_url:
+        example: https://github.com/
+        type: string
+    type: object
+  url-shortener_internal_auth.Token:
+    properties:
+      access_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+  url-shortener_internal_models.Link:
+    properties:
+      alias:
+        type: string
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        type: string
+      original_url:
+        type: string
+      owner_id:
+        type: string
+      short_url:
+        type: string
+    type: object
+  url-shortener_internal_models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      is_email_verified:
+        type: boolean
+      login_date:
+        type: string
+      updated_at:
+        type: string
+    required:
+    - email
+    type: object
+  url-shortener_pkg_http.Response-any:
+    properties:
+      data: {}
+      error:
+        type: string
+      ok:
+        type: boolean
+    type: object
+  url-shortener_pkg_http.Response-url-shortener_internal_auth_Token:
+    properties:
+      data:
+        $ref: '#/definitions/url-shortener_internal_auth.Token'
+      error:
+        type: string
+      ok:
+        type: boolean
+    type: object
+  url-shortener_pkg_http.Response-url-shortener_internal_models_Link:
+    properties:
+      data:
+        $ref: '#/definitions/url-shortener_internal_models.Link'
+      error:
+        type: string
+      ok:
+        type: boolean
+    type: object
+  url-shortener_pkg_http.Response-url-shortener_internal_models_User:
+    properties:
+      data:
+        $ref: '#/definitions/url-shortener_internal_models.User'
+      error:
+        type: string
+      ok:
+        type: boolean
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  title: URL Shortener API
+  version: "1.0"
+paths:
+  /{alias}:
+    get:
+      description: Performs redirect to the original URL using short alias
+      parameters:
+      - description: Short URL identifier
+        in: path
+        name: alias
+        required: true
+        type: string
+      responses:
+        "308":
+          description: Permanent redirect to original URL
+        "404":
+          description: URL not found
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      summary: Redirect by short URL
+      tags:
+      - links
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and generate access token
+      parameters:
+      - description: User credentials
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth_delivery_http.request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_auth_Token'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      summary: User login
+      tags:
+      - auth
+  /auth/me:
+    get:
+      description: Returns authenticated user's information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully retrieved user data
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_models_User'
+        "401":
+          description: Unauthorized - Missing or invalid token
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      security:
+      - BearerAuth: []
+      summary: Get current user info
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account and return authentication tokens
+      parameters:
+      - description: User registration data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth_delivery_http.request'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User successfully registered
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_auth_Token'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "409":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      summary: Register new user
+      tags:
+      - auth
+  /links:
+    post:
+      consumes:
+      - application/json
+      description: Generates a short alias for the provided URL
+      parameters:
+      - description: URL data for shortening
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_links_delivery_http.request'
+      - default: false
+        description: Создать ссылку без привязки к пользователю
+        in: header
+        name: X-Anonymous
+        required: true
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: URL successfully shortened
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_models_Link'
+        "400":
+          description: Invalid input data
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "401":
+          description: Unauthorized - Missing or invalid token
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      security:
+      - BearerAuth: []
+      summary: Create a short URL
+      tags:
+      - links
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

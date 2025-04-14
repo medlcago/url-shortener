@@ -46,8 +46,8 @@ func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Li
 	}
 
 	link.Alias = alias
-	id, err := s.repo.Save(ctx, link)
-	if err != nil {
+
+	if err := s.repo.Save(ctx, link); err != nil {
 		s.logger.Error("linksService.repo.Save:", err)
 		return nil, http.InternalServerError
 	}
@@ -59,10 +59,12 @@ func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Li
 		}
 	}()
 
-	s.logger.Infof("Created link with uid: %s", id)
+	s.logger.Infof("Created link with id: %s", link.ID)
 
 	shortURL := fmt.Sprintf("%s/%s", link.BaseURL, alias)
-	return models.NewLink(id, alias, link.OriginalURL, shortURL, link.ExpiresAt), nil
+	link.ShortURL = shortURL
+
+	return link, nil
 }
 
 func (s *linkService) Resolve(ctx context.Context, alias string) (string, error) {

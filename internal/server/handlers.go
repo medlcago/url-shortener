@@ -2,9 +2,11 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
+	"github.com/swaggo/http-swagger"
 	"time"
 	httpAuth "url-shortener/internal/auth/delivery/http"
 	repoAuth "url-shortener/internal/auth/repository"
@@ -41,11 +43,22 @@ func (s *Server) MapHandlers() {
 	s.app.Use(logger.New())
 	s.app.Use(mw.DebugMiddleware())
 
+	if s.cfg.Server.Mode == "Development" {
+		s.app.Get("/swagger/*", adaptor.HTTPHandlerFunc(httpSwagger.Handler(
+			httpSwagger.URL("http://localhost:3000/swagger/doc.json"),
+		)))
+	}
+
 	apiV1 := s.app.Group("/api/v1")
 
-	linksGroup := apiV1.Group("/links")
-	authGroup := apiV1.Group("/auth")
-
-	httpLinks.MapLinksRoutes(linksGroup, linksHandlers)
-	httpAuth.MapAuthRoutes(authGroup, authHandlers, mw)
+	// links endpoints
+	{
+		linksGroup := apiV1.Group("/links")
+		httpLinks.MapLinksRoutes(linksGroup, linksHandlers, mw)
+	}
+	// auth endpoints
+	{
+		authGroup := apiV1.Group("/auth")
+		httpAuth.MapAuthRoutes(authGroup, authHandlers, mw)
+	}
 }

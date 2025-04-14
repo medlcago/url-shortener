@@ -52,3 +52,15 @@ func (m *Manager) CurrentUserMiddleware() fiber.Handler {
 		return ctx.Next()
 	}
 }
+
+func (m *Manager) OptionalAuthMiddleware() fiber.Handler {
+	return func(ctx fiber.Ctx) error {
+		anonymousHeader := fiber.GetReqHeader[bool](ctx, "X-Anonymous", false)
+		ctx.Locals("anonymous", anonymousHeader)
+		if anonymousHeader {
+			return ctx.Next()
+		}
+
+		return m.CurrentUserMiddleware()(ctx)
+	}
+}

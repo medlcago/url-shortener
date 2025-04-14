@@ -2,11 +2,9 @@ package repository
 
 const (
 	createLink = `
-		INSERT INTO links (alias, original_url, expires_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (alias) DO UPDATE
-		SET original_url = $2, expires_at = $3
-		RETURNING id
+		INSERT INTO links (alias, original_url, expires_at, owner_id)
+		VALUES ($1, $2, $3, $4)
+		RETURNING *
 	`
 
 	getLinkByAlias = `

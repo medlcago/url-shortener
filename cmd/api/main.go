@@ -8,15 +8,27 @@ import (
 	"os"
 	"time"
 	"url-shortener/config"
+	_ "url-shortener/docs"
 	"url-shortener/internal/server"
 	"url-shortener/pkg/db/postgres"
 	"url-shortener/pkg/db/redis"
 	"url-shortener/pkg/http"
+	_ "url-shortener/pkg/http"
 	"url-shortener/pkg/logger"
 	redisStorage "url-shortener/pkg/storage/redis"
 	"url-shortener/pkg/utils"
 )
 
+// @title           URL Shortener API
+// @version         1.0
+
+// @host      localhost:3000
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	configPath := utils.GetConfigPath(os.Getenv("config_env"))
 	cfgFile, err := config.LoadConfig(configPath)

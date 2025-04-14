@@ -10,12 +10,12 @@ import (
 type User struct {
 	ID              uuid.UUID  `json:"id" db:"id"`
 	Email           string     `json:"email" validate:"required,email" db:"email"`
-	Password        string     `json:"password,omitempty" validate:"required,min=6" db:"password"`
+	Password        string     `json:"password,omitempty" validate:"required,min=6" db:"password" swaggerignore:"true"`
 	IsActive        bool       `json:"is_active" db:"is_active"`
-	IsEmailVerified bool       `json:"is_email_verified" db:"is_email_verified"`
+	IsEmailVerified bool       `json:"is_email_verified" db:"is_email_verified" `
 	CreatedAt       time.Time  `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at" db:"updated_at"`
-	LoginDate       *time.Time `json:"login_date,omitempty" db:"login_date"`
+	LoginDate       *time.Time `json:"login_date" db:"login_date"`
 }
 
 func (u *User) HashPassword() error {
