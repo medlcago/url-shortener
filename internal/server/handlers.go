@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/swaggo/http-swagger"
+	"strings"
 	"time"
 	httpAuth "url-shortener/internal/auth/delivery/http"
 	repoAuth "url-shortener/internal/auth/repository"
@@ -38,16 +39,17 @@ func (s *Server) MapHandlers() {
 		LimitReached: func(ctx fiber.Ctx) error {
 			return fiber.ErrTooManyRequests
 		},
+		Next: func(c fiber.Ctx) bool {
+			return strings.Contains(c.Path(), "swagger")
+		},
 	}))
 	s.app.Use(requestid.New())
 	s.app.Use(logger.New())
 	s.app.Use(mw.DebugMiddleware())
 
-	if s.cfg.Server.Mode == "Development" {
-		s.app.Get("/swagger/*", adaptor.HTTPHandlerFunc(httpSwagger.Handler(
-			httpSwagger.URL("http://localhost:3000/swagger/doc.json"),
-		)))
-	}
+	s.app.Get("/swagger/*", adaptor.HTTPHandlerFunc(httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	)))
 
 	apiV1 := s.app.Group("/api/v1")
 

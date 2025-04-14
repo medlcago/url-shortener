@@ -22,7 +22,6 @@ import (
 // @title           URL Shortener API
 // @version         1.0
 
-// @host      localhost:3000
 // @BasePath  /api/v1
 
 // @securityDefinitions.apikey BearerAuth

@@ -100,7 +100,6 @@ definitions:
       ok:
         type: boolean
     type: object
-host: localhost:3000
 info:
   contact: {}
   title: URL Shortener API

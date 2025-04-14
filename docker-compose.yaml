@@ -48,8 +48,20 @@ services:
     build:
       context: ./docker/nginx
       dockerfile: ./Dockerfile
+    env_file:
+      - .env
+    environment:
+      - HTUSER=${HTUSER}
+      - HTPASSWD=${HTPASSWD}
     ports:
       - "80:80"
     depends_on:
       - web
     restart: always
+    command: >
+      sh -c "
+      htpasswd -b -c /etc/nginx/.htpasswd $$HTUSER $$HTPASSWD &&
+      chmod 644 /etc/nginx/.htpasswd &&
+      chown root:root /etc/nginx/.htpasswd && 
+      nginx -g 'daemon off;'
+      "
