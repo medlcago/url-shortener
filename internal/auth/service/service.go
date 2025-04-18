@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -11,18 +12,20 @@ import (
 	"url-shortener/internal/auth/repository"
 	"url-shortener/internal/models"
 	"url-shortener/pkg/http"
+	"url-shortener/pkg/jwt"
 	"url-shortener/pkg/logger"
-	"url-shortener/pkg/utils"
+	"url-shortener/pkg/storage"
 )
 
 type authService struct {
-	repo   auth.Repository
-	cfg    *config.Config
-	logger logger.Logger
+	repo    auth.Repository
+	storage storage.Storage
+	cfg     *config.Config
+	logger  logger.Logger
 }
 
-func NewAuthService(repo auth.Repository, cfg *config.Config, logger logger.Logger) auth.Service {
-	return &authService{repo: repo, cfg: cfg, logger: logger}
+func NewAuthService(repo auth.Repository, storage storage.Storage, cfg *config.Config, logger logger.Logger) auth.Service {
+	return &authService{repo: repo, storage: storage, cfg: cfg, logger: logger}
 }
 
 func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token, error) {
@@ -43,11 +46,11 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 		return nil, http.InvalidCredentials
 	}
 
-	token, err := utils.GenerateJWTToken(u, s.cfg.Server.JwtSecretKey)
+	tokenPair, err := jwt.NewTokenPair(u.ID.String(), s.cfg.Server.JwtSecretKey)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
 			"user_id": u.ID,
-		}).Error("failed to generate JWT")
+		}).Error("Login: failed to create token pair")
 
 		return nil, http.InternalServerError
 	}
@@ -58,7 +61,7 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 		}).Error("failed to update last login time")
 	}
 
-	return auth.NewToken(token), nil
+	return auth.NewToken(tokenPair.AccessToken, tokenPair.RefreshToken), nil
 }
 
 func (s *authService) Register(ctx context.Context, user *models.User) (*auth.Token, error) {
@@ -82,16 +85,16 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 		return nil, http.InternalServerError
 	}
 
-	token, err := utils.GenerateJWTToken(user, s.cfg.Server.JwtSecretKey)
+	tokenPair, err := jwt.NewTokenPair(user.ID.String(), s.cfg.Server.JwtSecretKey)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
 			"user_id": user.ID,
-		}).Error("failed to generate JWT")
+		}).Error("Register: failed to create token pair")
 
 		return nil, http.InternalServerError
 	}
 
-	return auth.NewToken(token), nil
+	return auth.NewToken(tokenPair.AccessToken, tokenPair.RefreshToken), nil
 }
 
 func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
@@ -109,4 +112,33 @@ func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 	}
 
 	return user, nil
+}
+
+func (s *authService) RefreshToken(ctx context.Context, data *auth.Data) (*auth.Token, error) {
+	exists, err := s.storage.Exists(ctx, s.refreshTokenKey(data.Token))
+	if err != nil {
+		s.logger.Errorf("failed to check if token exists: %s", err.Error())
+		return nil, http.InternalServerError
+	}
+
+	if exists {
+		return nil, http.InvalidToken
+	}
+
+	if err := s.storage.Set(ctx, s.refreshTokenKey(data.Token), data.Token, data.TTL); err != nil {
+		s.logger.Errorf("failed to set token: %s", err.Error())
+		return nil, http.InternalServerError
+	}
+
+	res, err := jwt.NewTokenPair(data.User.ID.String(), s.cfg.Server.JwtSecretKey)
+	if err != nil {
+		s.logger.Errorf("tokenPair: failed to refresh token: %s", err.Error())
+		return nil, http.InternalServerError
+	}
+
+	return auth.NewToken(res.AccessToken, res.RefreshToken), nil
+}
+
+func (s *authService) refreshTokenKey(token string) string {
+	return fmt.Sprintf("refreshToken:%s", token)
 }

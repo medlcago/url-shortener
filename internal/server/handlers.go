@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/swaggo/http-swagger"
 	"strings"
@@ -25,7 +26,7 @@ func (s *Server) MapHandlers() {
 
 	// Init services
 	linksService := serviceLinks.NewLinkService(linksRepo, s.storage, s.logger)
-	authService := serviceAuth.NewAuthService(authRepo, s.cfg, s.logger)
+	authService := serviceAuth.NewAuthService(authRepo, s.storage, s.cfg, s.logger)
 
 	// Init handlers
 	linksHandlers := httpLinks.NewLinksHandlers(linksService)
@@ -42,6 +43,9 @@ func (s *Server) MapHandlers() {
 		Next: func(c fiber.Ctx) bool {
 			return strings.Contains(c.Path(), "swagger")
 		},
+	}))
+	s.app.Use(recover.New(recover.Config{
+		EnableStackTrace: true,
 	}))
 	s.app.Use(requestid.New())
 	s.app.Use(logger.New())

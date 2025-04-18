@@ -104,6 +104,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/refresh-token": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Refresh token. Requires valid refresh token in Authorization header.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token",
+                "responses": {
+                    "200": {
+                        "description": "Returns new access and refresh tokens",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_auth_Token"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-any"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "description": "Create a new user account and return authentication tokens",
@@ -223,7 +263,7 @@ const docTemplate = `{
         },
         "/{alias}": {
             "get": {
-                "description": "Performs redirect to the original URL using short alias",
+                "description": "Performs redirect from short URL to original",
                 "tags": [
                     "links"
                 ],
@@ -295,6 +335,9 @@ const docTemplate = `{
                 "access_token": {
                     "type": "string"
                 },
+                "refresh_token": {
+                    "type": "string"
+                },
                 "token_type": {
                     "type": "string"
                 }
@@ -355,12 +398,19 @@ const docTemplate = `{
                 }
             }
         },
+        "url-shortener_pkg_http.MetaData": {
+            "type": "object",
+            "additionalProperties": {}
+        },
         "url-shortener_pkg_http.Response-any": {
             "type": "object",
             "properties": {
                 "data": {},
                 "error": {
                     "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/url-shortener_pkg_http.MetaData"
                 },
                 "ok": {
                     "type": "boolean"
@@ -376,6 +426,9 @@ const docTemplate = `{
                 "error": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/url-shortener_pkg_http.MetaData"
+                },
                 "ok": {
                     "type": "boolean"
                 }
@@ -390,6 +443,9 @@ const docTemplate = `{
                 "error": {
                     "type": "string"
                 },
+                "meta": {
+                    "$ref": "#/definitions/url-shortener_pkg_http.MetaData"
+                },
                 "ok": {
                     "type": "boolean"
                 }
@@ -403,6 +459,9 @@ const docTemplate = `{
                 },
                 "error": {
                     "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/url-shortener_pkg_http.MetaData"
                 },
                 "ok": {
                     "type": "boolean"

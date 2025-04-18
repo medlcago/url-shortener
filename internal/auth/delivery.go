@@ -6,4 +6,5 @@ type Handlers interface {
 	Login(ctx fiber.Ctx) error
 	Register(ctx fiber.Ctx) error
 	GetMe(ctx fiber.Ctx) error
+	RefreshToken(ctx fiber.Ctx) error
 }

@@ -26,6 +26,8 @@ definitions:
     properties:
       access_token:
         type: string
+      refresh_token:
+        type: string
       token_type:
         type: string
     type: object
@@ -65,11 +67,16 @@ definitions:
     required:
     - email
     type: object
+  url-shortener_pkg_http.MetaData:
+    additionalProperties: {}
+    type: object
   url-shortener_pkg_http.Response-any:
     properties:
       data: {}
       error:
         type: string
+      meta:
+        $ref: '#/definitions/url-shortener_pkg_http.MetaData'
       ok:
         type: boolean
     type: object
@@ -79,6 +86,8 @@ definitions:
         $ref: '#/definitions/url-shortener_internal_auth.Token'
       error:
         type: string
+      meta:
+        $ref: '#/definitions/url-shortener_pkg_http.MetaData'
       ok:
         type: boolean
     type: object
@@ -88,6 +97,8 @@ definitions:
         $ref: '#/definitions/url-shortener_internal_models.Link'
       error:
         type: string
+      meta:
+        $ref: '#/definitions/url-shortener_pkg_http.MetaData'
       ok:
         type: boolean
     type: object
@@ -97,6 +108,8 @@ definitions:
         $ref: '#/definitions/url-shortener_internal_models.User'
       error:
         type: string
+      meta:
+        $ref: '#/definitions/url-shortener_pkg_http.MetaData'
       ok:
         type: boolean
     type: object
@@ -107,7 +120,7 @@ info:
 paths:
   /{alias}:
     get:
-      description: Performs redirect to the original URL using short alias
+      description: Performs redirect from short URL to original
       parameters:
       - description: Short URL identifier
         in: path
@@ -183,6 +196,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Get current user info
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Refresh token. Requires valid refresh token in Authorization header.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns new access and refresh tokens
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-url-shortener_internal_auth_Token'
+        "401":
+          description: Unauthorized - Missing or invalid token
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      security:
+      - BearerAuth: []
+      summary: Refresh token
       tags:
       - auth
   /auth/register:
