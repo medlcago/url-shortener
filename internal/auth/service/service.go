@@ -32,12 +32,21 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 	u, err := s.repo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		if errors.Is(err, repository.UserNotFound) {
+			s.logger.WithFields(logrus.Fields{
+				"email":    user.Email,
+				"endpoint": "Login",
+				"type":     "auth",
+			}).Warn("login attempt with non-existent email")
+
 			return nil, http.InvalidCredentials
 		}
+
 		s.logger.WithFields(logrus.Fields{
-			"email": user.Email,
-			"error": err.Error(),
-		}).Error("failed to get user")
+			"email":    user.Email,
+			"error":    err.Error(),
+			"endpoint": "Login",
+			"op":       "repo.GetByEmail",
+		}).Error("failed to get user by email")
 
 		return nil, http.InternalServerError
 	}
@@ -49,15 +58,21 @@ func (s *authService) Login(ctx context.Context, user *models.User) (*auth.Token
 	tokenPair, err := jwt.NewTokenPair(u.ID.String(), s.cfg.Server.JwtSecretKey)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"user_id": u.ID,
-		}).Error("Login: failed to create token pair")
+			"user_id":  u.ID,
+			"op":       "jwt.NewTokenPair",
+			"endpoint": "Login",
+			"error":    err.Error(),
+		}).Error("failed to create token pair")
 
 		return nil, http.InternalServerError
 	}
 
 	if err = s.repo.UpdateLastLogin(ctx, u.ID, time.Now().UTC()); err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"user_id": u.ID,
+			"user_id":  u.ID,
+			"op":       "repo.UpdateLastLogin",
+			"endpoint": "Login",
+			"error":    err.Error(),
 		}).Error("failed to update last login time")
 	}
 
@@ -71,15 +86,21 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 
 	if err := user.PrepareCreate(); err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"email": user.Email,
-		}).Error("failed to prepare the user for registration")
+			"email":    user.Email,
+			"op":       "user.PrepareCreate",
+			"endpoint": "Register",
+			"error":    err.Error(),
+		}).Error("failed to prepare user for registration")
 
 		return nil, http.InternalServerError
 	}
 
 	if err := s.repo.Create(ctx, user); err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"email": user.Email,
+			"email":    user.Email,
+			"op":       "repo.Create",
+			"endpoint": "Register",
+			"error":    err.Error(),
 		}).Error("failed to create user")
 
 		return nil, http.InternalServerError
@@ -88,8 +109,11 @@ func (s *authService) Register(ctx context.Context, user *models.User) (*auth.To
 	tokenPair, err := jwt.NewTokenPair(user.ID.String(), s.cfg.Server.JwtSecretKey)
 	if err != nil {
 		s.logger.WithFields(logrus.Fields{
-			"user_id": user.ID,
-		}).Error("Register: failed to create token pair")
+			"user_id":  user.ID,
+			"op":       "jwt.NewTokenPair",
+			"endpoint": "Register",
+			"error":    err.Error(),
+		}).Error("failed to create token pair")
 
 		return nil, http.InternalServerError
 	}
@@ -105,8 +129,11 @@ func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 		}
 
 		s.logger.WithFields(logrus.Fields{
-			"user_id": id,
-		}).Error("failed to get user")
+			"user_id":  id,
+			"op":       "repo.GetByID",
+			"endpoint": "GetByID",
+			"error":    err.Error(),
+		}).Error("failed to get user by ID")
 
 		return nil, http.InternalServerError
 	}
@@ -115,9 +142,16 @@ func (s *authService) GetByID(ctx context.Context, id uuid.UUID) (*models.User, 
 }
 
 func (s *authService) RefreshToken(ctx context.Context, data *auth.Data) (*auth.Token, error) {
-	exists, err := s.storage.Exists(ctx, s.refreshTokenKey(data.Token))
+	key := s.refreshTokenKey(data.Token)
+	exists, err := s.storage.Exists(ctx, key)
 	if err != nil {
-		s.logger.Errorf("failed to check if token exists: %s", err.Error())
+		s.logger.WithFields(logrus.Fields{
+			"user_id":  data.User.ID,
+			"op":       "storage.Exists",
+			"endpoint": "RefreshToken",
+			"error":    err.Error(),
+		}).Error("failed to check token existence")
+
 		return nil, http.InternalServerError
 	}
 
@@ -126,13 +160,25 @@ func (s *authService) RefreshToken(ctx context.Context, data *auth.Data) (*auth.
 	}
 
 	if err := s.storage.Set(ctx, s.refreshTokenKey(data.Token), data.Token, data.TTL); err != nil {
-		s.logger.Errorf("failed to set token: %s", err.Error())
+		s.logger.WithFields(logrus.Fields{
+			"user_id":  data.User.ID,
+			"op":       "storage.Set",
+			"endpoint": "RefreshToken",
+			"error":    err.Error(),
+		}).Error("failed to set refresh token")
+
 		return nil, http.InternalServerError
 	}
 
 	res, err := jwt.NewTokenPair(data.User.ID.String(), s.cfg.Server.JwtSecretKey)
 	if err != nil {
-		s.logger.Errorf("tokenPair: failed to refresh token: %s", err.Error())
+		s.logger.WithFields(logrus.Fields{
+			"user_id":  data.User.ID,
+			"op":       "jwt.NewTokenPair",
+			"endpoint": "RefreshToken",
+			"error":    err.Error(),
+		}).Error("failed to create new token pair")
+
 		return nil, http.InternalServerError
 	}
 

@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"time"
 	"url-shortener/internal/auth"
 	"url-shortener/pkg/http"
@@ -43,13 +44,18 @@ func (m *Manager) AuthJWTMiddleware(tokenType jwt.TokenType) fiber.Handler {
 
 		userID, err := uuid.Parse(claims.ID)
 		if err != nil {
-			m.logger.Errorf("failed to parse user id from claims: %s", err.Error())
+			m.logger.WithFields(logrus.Fields{
+				"user_id":    claims.ID,
+				"op":         "uuid.Parse",
+				"middleware": "AuthJWTMiddleware",
+				"error":      err.Error(),
+			}).Error("failed to parse user id")
+
 			return http.InvalidToken
 		}
 
 		user, err := m.authService.GetByID(context.Background(), userID)
 		if err != nil {
-			m.logger.Errorf("failed to get user by id: %s", err.Error())
 			return http.InvalidToken
 		}
 

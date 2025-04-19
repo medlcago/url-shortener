@@ -23,19 +23,20 @@ func NewLinksHandlers(linksService links.Service) links.Handlers {
 }
 
 // Create godoc
-// @Summary Create a short URL
-// @Description Generates a short alias for the provided URL
-// @Tags links
-// @Accept json
-// @Produce json
-// @Param request body request true "URL data for shortening"
-// @Param   X-Anonymous header boolean true "Создать ссылку без привязки к пользователю" default(false)
-// @Success 201 {object} http.Response[models.Link] "URL successfully shortened"
-// @Failure 400 {object} http.Response[any] "Invalid input data"
-// @Failure 401 {object} http.Response[any] "Unauthorized - Missing or invalid token"
-// @Failure 500 {object} http.Response[any] "Internal server error"
-// @Security BearerAuth
-// @Router /links [post]
+//
+//	@Summary		Create a short URL
+//	@Description	Generates a short alias for the provided URL
+//	@Tags			links
+//	@Accept			json
+//	@Produce		json
+//	@Param			request		body		request						true	"URL data for shortening"
+//	@Param			X-Anonymous	header		boolean						true	"Создать ссылку без привязки к пользователю"	default(false)
+//	@Success		201			{object}	http.Response[models.Link]	"URL successfully shortened"
+//	@Failure		400			{object}	http.Response[any]			"Invalid input data"
+//	@Failure		401			{object}	http.Response[any]			"Unauthorized - Missing or invalid token"
+//	@Failure		500			{object}	http.Response[any]			"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/links [post]
 func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 	var req request
 	if err := ctx.Bind().JSON(&req); err != nil {
@@ -66,14 +67,15 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 }
 
 // Redirect godoc
-// @Summary Redirect by short URL
-// @Description Performs redirect to the original URL using short alias
-// @Tags links
-// @Param alias path string true "Short URL identifier"
-// @Success 308 "Permanent redirect to original URL"
-// @Failure 404 {object} http.Response[any] "URL not found"
-// @Failure 500 {object} http.Response[any] "Internal server error"
-// @Router /{alias} [get]
+//
+//	@Summary		Redirect by short URL
+//	@Description	Performs redirect from short URL to original
+//	@Tags			links
+//	@Param			alias	path	string	true	"Short URL identifier"
+//	@Success		308		"Permanent redirect to original URL"
+//	@Failure		404		{object}	http.Response[any]	"URL not found"
+//	@Failure		500		{object}	http.Response[any]	"Internal server error"
+//	@Router			/{alias} [get]
 func (h *linksHandlers) Redirect(ctx fiber.Ctx) error {
 	alias := fiber.Params[string](ctx, "alias")
 	url, err := h.linksService.Resolve(context.Background(), alias)
