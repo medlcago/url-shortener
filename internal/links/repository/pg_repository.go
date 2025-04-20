@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"time"
 	"url-shortener/internal/links"
@@ -44,4 +45,19 @@ func (r *linksRepo) Exists(ctx context.Context, alias string) (bool, error) {
 		return false, err
 	}
 	return exists, nil
+}
+
+func (r *linksRepo) SelectAll(ctx context.Context, ownerID uuid.UUID, limit, offset int) ([]models.Link, int64, error) {
+	var data []models.Link
+	var count int64
+
+	if err := r.db.SelectContext(ctx, &data, getAllUserLinks, ownerID, limit, offset); err != nil {
+		return nil, 0, err
+	}
+
+	if err := r.db.GetContext(ctx, &count, countUserLinks, ownerID); err != nil {
+		return nil, 0, err
+	}
+
+	return data, count, nil
 }

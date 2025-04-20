@@ -189,6 +189,57 @@
             }
         },
         "/links": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves all shortened URLs for the authenticated user with pagination",
+                "tags": [
+                    "links"
+                ],
+                "summary": "Get all user's links",
+                "parameters": [
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Number of items per page",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "default": 0,
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of user's links with pagination info",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-array_url-shortener_internal_models_Link"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Missing or invalid token",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-any"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/url-shortener_pkg_http.Response-any"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -253,7 +304,7 @@
                 }
             }
         },
-        "/{alias}": {
+        "/links/{alias}": {
             "get": {
                 "description": "Performs redirect from short URL to original",
                 "tags": [
@@ -398,6 +449,26 @@
             "type": "object",
             "properties": {
                 "data": {},
+                "error": {
+                    "type": "string"
+                },
+                "meta": {
+                    "$ref": "#/definitions/url-shortener_pkg_http.MetaData"
+                },
+                "ok": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "url-shortener_pkg_http.Response-array_url-shortener_internal_models_Link": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/url-shortener_internal_models.Link"
+                    }
+                },
                 "error": {
                     "type": "string"
                 },

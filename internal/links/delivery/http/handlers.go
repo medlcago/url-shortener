@@ -4,9 +4,11 @@ import (
 	"context"
 	"github.com/gofiber/fiber/v3"
 	"time"
+	"url-shortener/internal/auth"
 	"url-shortener/internal/links"
 	"url-shortener/internal/models"
 	"url-shortener/pkg/http"
+	"url-shortener/pkg/pagination"
 )
 
 type request struct {
@@ -49,10 +51,10 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 	}
 	isAnonymous := fiber.Locals[bool](ctx, "anonymous")
 	if !isAnonymous {
-		if user, exists := ctx.Locals("user").(*models.User); exists {
-			link.OwnerID = &user.ID
+		if authData, exists := ctx.Locals("authData").(*auth.Data); exists {
+			link.OwnerID = &authData.User.ID
 		} else {
-			return fiber.ErrUnauthorized
+			return http.InvalidCredentials
 		}
 	}
 
@@ -75,7 +77,7 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 //	@Success		308		"Permanent redirect to original URL"
 //	@Failure		404		{object}	http.Response[any]	"URL not found"
 //	@Failure		500		{object}	http.Response[any]	"Internal server error"
-//	@Router			/{alias} [get]
+//	@Router			/links/{alias} [get]
 func (h *linksHandlers) Redirect(ctx fiber.Ctx) error {
 	alias := fiber.Params[string](ctx, "alias")
 	url, err := h.linksService.Resolve(context.Background(), alias)
@@ -83,4 +85,29 @@ func (h *linksHandlers) Redirect(ctx fiber.Ctx) error {
 		return err
 	}
 	return ctx.Redirect().Status(fiber.StatusPermanentRedirect).To(url)
+}
+
+// GetAll godoc
+//
+//	@Summary		Get all user's links
+//	@Description	Retrieves all shortened URLs for the authenticated user with pagination
+//	@Tags			links
+//	@Security		BearerAuth
+//	@Param			limit	query		int								false	"Number of items per page"	default(10)	minimum(1)	maximum(100)
+//	@Param			offset	query		int								false	"Offset for pagination"		default(0)	minimum(0)
+//	@Success		200		{object}	http.Response[[]models.Link]	"List of user's links with pagination info"
+//	@Failure		401		{object}	http.Response[any]				"Unauthorized - Missing or invalid token"
+//	@Failure		500		{object}	http.Response[any]				"Internal server error"
+//	@Router			/links [get]
+func (h *linksHandlers) GetAll(ctx fiber.Ctx) error {
+	authData := fiber.Locals[*auth.Data](ctx, "authData")
+	p := pagination.FromContext(ctx)
+
+	res, total, err := h.linksService.GetAll(context.Background(), ctx.BaseURL(), authData.User.ID, p.Limit, p.Offset)
+	if err != nil {
+		return err
+	}
+
+	data := http.OK[[]models.Link](res, http.MetaData{"total": total})
+	return ctx.JSON(data)
 }

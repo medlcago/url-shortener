@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"math/big"
 	"time"
@@ -72,8 +73,7 @@ func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Li
 		"alias":    alias,
 	}).Info("link created")
 
-	shortURL := fmt.Sprintf("%s/%s", link.BaseURL, alias)
-	link.ShortURL = shortURL
+	link.ShortURL = s.shortURL(link.BaseURL, alias)
 	return link, nil
 }
 
@@ -143,4 +143,28 @@ func (s *linkService) generateRandomString(length int) (string, error) {
 	}
 
 	return string(result), nil
+}
+
+func (s *linkService) shortURL(baseURL string, alias string) string {
+	return fmt.Sprintf("%s/%s", baseURL, alias)
+}
+
+func (s *linkService) GetAll(ctx context.Context, baseURL string, ownerID uuid.UUID, limit, offset int) ([]models.Link, int64, error) {
+	data, total, err := s.repo.SelectAll(ctx, ownerID, limit, offset)
+	if err != nil {
+		s.logger.WithFields(logrus.Fields{
+			"op":       "repo.SelectAll",
+			"endpoint": "GetAll",
+			"owner_id": ownerID,
+			"error":    err.Error(),
+		}).Error("failed to get links")
+
+		return nil, 0, http.InternalServerError
+	}
+
+	for i := 0; i < len(data); i++ {
+		data[i].ShortURL = s.shortURL(baseURL, data[i].Alias)
+	}
+
+	return data, total, nil
 }

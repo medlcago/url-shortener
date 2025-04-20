@@ -80,6 +80,19 @@ definitions:
       ok:
         type: boolean
     type: object
+  url-shortener_pkg_http.Response-array_url-shortener_internal_models_Link:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/url-shortener_internal_models.Link'
+        type: array
+      error:
+        type: string
+      meta:
+        $ref: '#/definitions/url-shortener_pkg_http.MetaData'
+      ok:
+        type: boolean
+    type: object
   url-shortener_pkg_http.Response-url-shortener_internal_auth_Token:
     properties:
       data:
@@ -118,29 +131,6 @@ info:
   title: URL Shortener API
   version: "1.0"
 paths:
-  /{alias}:
-    get:
-      description: Performs redirect from short URL to original
-      parameters:
-      - description: Short URL identifier
-        in: path
-        name: alias
-        required: true
-        type: string
-      responses:
-        "308":
-          description: Permanent redirect to original URL
-        "404":
-          description: URL not found
-          schema:
-            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
-      summary: Redirect by short URL
-      tags:
-      - links
   /auth/login:
     post:
       consumes:
@@ -258,6 +248,40 @@ paths:
       tags:
       - auth
   /links:
+    get:
+      description: Retrieves all shortened URLs for the authenticated user with pagination
+      parameters:
+      - default: 10
+        description: Number of items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        minimum: 0
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: List of user's links with pagination info
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-array_url-shortener_internal_models_Link'
+        "401":
+          description: Unauthorized - Missing or invalid token
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      security:
+      - BearerAuth: []
+      summary: Get all user's links
+      tags:
+      - links
     post:
       consumes:
       - application/json
@@ -297,6 +321,29 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a short URL
+      tags:
+      - links
+  /links/{alias}:
+    get:
+      description: Performs redirect from short URL to original
+      parameters:
+      - description: Short URL identifier
+        in: path
+        name: alias
+        required: true
+        type: string
+      responses:
+        "308":
+          description: Permanent redirect to original URL
+        "404":
+          description: URL not found
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/url-shortener_pkg_http.Response-any'
+      summary: Redirect by short URL
       tags:
       - links
 securityDefinitions:

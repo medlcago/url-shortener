@@ -13,4 +13,15 @@ const (
 		`
 
 	existsLink = `SELECT EXISTS(SELECT 1 FROM links WHERE alias = $1)`
+
+	getAllUserLinks = `
+        SELECT * FROM links 
+        WHERE owner_id = $1 
+        ORDER BY created_at DESC 
+        LIMIT $2 OFFSET $3
+    `
+	countUserLinks = `
+        SELECT COUNT(id) FROM links 
+        WHERE owner_id = $1
+    `
 )
