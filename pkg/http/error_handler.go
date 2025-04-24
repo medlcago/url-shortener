@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v3"
@@ -23,6 +24,10 @@ func ErrorHandler(c fiber.Ctx, err error) error {
 	var validationErrors validator.ValidationErrors
 	if errors.As(err, &validationErrors) {
 		status = fiber.StatusBadRequest
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		status = fiber.StatusRequestTimeout
 	}
 
 	return c.Status(status).JSON(Error(message))

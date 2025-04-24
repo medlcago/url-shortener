@@ -156,10 +156,10 @@ func (s *authService) RefreshToken(ctx context.Context, data *auth.Data) (*auth.
 	}
 
 	if exists {
-		return nil, http.InvalidToken
+		return nil, http.TokenExpired
 	}
 
-	if err := s.storage.Set(ctx, s.refreshTokenKey(data.Token), data.Token, data.TTL); err != nil {
+	if err := s.storage.Set(ctx, key, data.Token, data.TTL); err != nil {
 		s.logger.WithFields(logrus.Fields{
 			"user_id":  data.User.ID,
 			"op":       "storage.Set",

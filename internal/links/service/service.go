@@ -56,14 +56,14 @@ func (s *linkService) Create(ctx context.Context, link *models.Link) (*models.Li
 	}
 
 	go func() {
-		err := s.cacheLink(alias, link)
+		err := s.cacheLink(ctx, alias, link)
 		if err != nil {
 			s.logger.WithFields(logrus.Fields{
 				"op":       "linkService.cacheLink",
 				"endpoint": "Create",
 				"alias":    alias,
 				"error":    err.Error(),
-			}).Warnf("failed to cache link")
+			}).Warn("failed to cache link")
 		}
 	}()
 
@@ -112,14 +112,14 @@ func (s *linkService) Resolve(ctx context.Context, alias string) (string, error)
 	}
 
 	go func() {
-		err := s.cacheLink(alias, link)
+		err := s.cacheLink(ctx, alias, link)
 		if err != nil {
 			s.logger.WithFields(logrus.Fields{
 				"op":       "cacheLink",
 				"endpoint": "Resolve",
 				"alias":    alias,
 				"error":    err.Error(),
-			}).Warnf("failed to update cache link")
+			}).Warn("failed to update cache link")
 		}
 	}()
 

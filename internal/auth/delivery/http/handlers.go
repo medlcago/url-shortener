@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"github.com/gofiber/fiber/v3"
 	"url-shortener/internal/auth"
 	"url-shortener/internal/models"
@@ -44,7 +43,7 @@ func (h *authHandlers) Login(ctx fiber.Ctx) error {
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	token, err := h.authService.Login(context.Background(), &user)
+	token, err := h.authService.Login(ctx.Context(), &user)
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func (h *authHandlers) Register(ctx fiber.Ctx) error {
 		Email:    req.Email,
 		Password: req.Password,
 	}
-	token, err := h.authService.Register(context.Background(), &user)
+	token, err := h.authService.Register(ctx.Context(), &user)
 	if err != nil {
 		return err
 	}
@@ -117,7 +116,7 @@ func (h *authHandlers) GetMe(ctx fiber.Ctx) error {
 //	@Router			/auth/refresh-token [post]
 func (h *authHandlers) RefreshToken(ctx fiber.Ctx) error {
 	authData := fiber.Locals[*auth.Data](ctx, "authData")
-	res, err := h.authService.RefreshToken(context.Background(), authData)
+	res, err := h.authService.RefreshToken(ctx.Context(), authData)
 	if err != nil {
 		return err
 	}

@@ -11,6 +11,10 @@ import (
 	"url-shortener/pkg/pagination"
 )
 
+const (
+	defaultCtxTimeout = 5 * time.Second
+)
+
 type request struct {
 	OriginalURL string     `json:"original_url" validate:"http_url" example:"https://github.com/"`
 	ExpiresAt   *time.Time `json:"expires_at" example:"2006-01-02T15:04:05Z"`
@@ -59,7 +63,11 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 	}
 
 	link.BaseURL = ctx.BaseURL()
-	res, err := h.linksService.Create(context.Background(), &link)
+
+	c, cancel := context.WithTimeout(ctx.Context(), defaultCtxTimeout)
+	defer cancel()
+
+	res, err := h.linksService.Create(c, &link)
 	if err != nil {
 		return err
 	}
@@ -80,7 +88,10 @@ func (h *linksHandlers) Create(ctx fiber.Ctx) error {
 //	@Router			/links/{alias} [get]
 func (h *linksHandlers) Redirect(ctx fiber.Ctx) error {
 	alias := fiber.Params[string](ctx, "alias")
-	url, err := h.linksService.Resolve(context.Background(), alias)
+	c, cancel := context.WithTimeout(ctx.Context(), defaultCtxTimeout)
+	defer cancel()
+
+	url, err := h.linksService.Resolve(c, alias)
 	if err != nil {
 		return err
 	}
@@ -103,7 +114,7 @@ func (h *linksHandlers) GetAll(ctx fiber.Ctx) error {
 	authData := fiber.Locals[*auth.Data](ctx, "authData")
 	p := pagination.FromContext(ctx)
 
-	res, total, err := h.linksService.GetAll(context.Background(), ctx.BaseURL(), authData.User.ID, p.Limit, p.Offset)
+	res, total, err := h.linksService.GetAll(ctx.Context(), ctx.BaseURL(), authData.User.ID, p.Limit, p.Offset)
 	if err != nil {
 		return err
 	}

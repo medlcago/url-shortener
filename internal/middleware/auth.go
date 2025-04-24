@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
 	"github.com/google/uuid"
@@ -54,14 +53,18 @@ func (m *Manager) AuthJWTMiddleware(tokenType jwt.TokenType) fiber.Handler {
 			return http.InvalidToken
 		}
 
-		user, err := m.authService.GetByID(context.Background(), userID)
+		user, err := m.authService.GetByID(ctx.Context(), userID)
 		if err != nil {
 			return http.InvalidToken
 		}
 
 		user.SanitizePassword()
 
-		authData := &auth.Data{Token: token, User: user, TTL: time.Until(claims.ExpiresAt.Time)}
+		authData := &auth.Data{
+			Token: token,
+			User:  user,
+			TTL:   time.Until(claims.ExpiresAt.Time),
+		}
 		ctx.Locals("authData", authData)
 		return ctx.Next()
 	}

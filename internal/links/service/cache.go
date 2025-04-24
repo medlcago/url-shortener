@@ -16,7 +16,7 @@ func cacheKey(alias string) string {
 	return cacheKeyPrefix + alias
 }
 
-func (s *linkService) cacheLink(alias string, link *models.Link) error {
+func (s *linkService) cacheLink(ctx context.Context, alias string, link *models.Link) error {
 	var cacheTTL time.Duration
 	if link.ExpiresAt == nil {
 		cacheTTL = 30 * 24 * time.Hour
@@ -27,9 +27,6 @@ func (s *linkService) cacheLink(alias string, link *models.Link) error {
 			return errors.New("link expired")
 		}
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
 
 	if err := s.storage.Set(ctx, cacheKey(alias), link.OriginalURL, cacheTTL); err != nil {
 		return err
