@@ -44,6 +44,7 @@ func (s *Server) MapHandlers() {
 			return strings.Contains(c.Path(), "swagger")
 		},
 	}))
+	s.app.Use(mw.PrometheusMiddleware())
 	s.app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
 	}))

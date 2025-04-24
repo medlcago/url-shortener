@@ -21,5 +21,5 @@ ENV config_env=docker
 
 EXPOSE 3000
 
-ENTRYPOINT CompileDaemon --build="go build ./cmd/api/main.go" --command=./main
+ENTRYPOINT exec CompileDaemon --build="go build ./cmd/api/main.go" --command=./main
 

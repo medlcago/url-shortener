@@ -23,6 +23,8 @@ type Server struct {
 	db      *sqlx.DB
 	storage storage.Storage
 	logger  logger.Logger
+
+	metrics *MetricsServer
 }
 
 func NewServer(app *fiber.App, cfg *config.Config, db *sqlx.DB, storage storage.Storage, logger logger.Logger) *Server {
@@ -32,6 +34,7 @@ func NewServer(app *fiber.App, cfg *config.Config, db *sqlx.DB, storage storage.
 		db:      db,
 		storage: storage,
 		logger:  logger,
+		metrics: NewMetricsServer(cfg.Server.MetricsPort),
 	}
 }
 
@@ -40,7 +43,13 @@ func (s *Server) Run() error {
 
 	go func() {
 		if err := s.app.Listen(s.cfg.Server.Port); err != nil {
-			s.logger.Errorf("server listening error: %v", err)
+			s.logger.Errorf("API server listening error: %v", err)
+		}
+	}()
+
+	go func() {
+		if err := s.metrics.Listen(); err != nil {
+			s.logger.Errorf("metrics server listening error: %v", err)
 		}
 	}()
 
@@ -48,9 +57,20 @@ func (s *Server) Run() error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
+
 	ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer shutdown()
 
+	if err := s.app.ShutdownWithContext(ctx); err != nil {
+		s.logger.Errorf("API server shutdown error: %v", err)
+		return err
+	}
+
+	if err := s.metrics.Shutdown(ctx); err != nil {
+		s.logger.Errorf("metrics server shutdown error: %v", err)
+		return err
+	}
+
 	s.logger.Info("Server Exited Properly")
-	return s.app.ShutdownWithContext(ctx)
+	return nil
 }

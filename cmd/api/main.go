@@ -48,6 +48,7 @@ func main() {
 		WriteTimeout:    time.Second * cfg.Server.WriteTimeout,
 		ServerHeader:    cfg.Server.ServerHeader,
 		ErrorHandler:    http.ErrorHandler,
+		ProxyHeader:     cfg.Server.ProxyHeader,
 	})
 
 	psqlDB, err := postgres.NewPsqlDB(cfg)

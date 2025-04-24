@@ -24,6 +24,8 @@ type Server struct {
 	AppVersion   string
 	ServerHeader string
 	Port         string
+	MetricsPort  string
+	ProxyHeader  string
 	Mode         string
 	JwtSecretKey string
 	ReadTimeout  time.Duration

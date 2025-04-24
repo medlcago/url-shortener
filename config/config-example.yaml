@@ -2,6 +2,8 @@ server:
   AppVersion: 1.0.0
   ServerHeader: fiber
   Port: :3000
+  MetricsPort: :3001
+  ProxyHeader: X-Forwarded-For
   Mode: Development
   JwtSecretKey: secretkey
   ReadTimeout: 5

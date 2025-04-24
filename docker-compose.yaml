@@ -65,3 +65,14 @@ services:
       chown root:root /etc/nginx/.htpasswd && 
       nginx -g 'daemon off;'
       "
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./docker/prometheus/:/etc/prometheus/
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    restart: always
